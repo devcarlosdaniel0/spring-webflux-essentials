@@ -53,7 +53,7 @@ public class AnimeService {
     }
 
     private void throwResponseStatusExceptionWhenEmptyName(Anime anime) {
-        if (StringUtil.isNullOrEmpty(anime.getName())) {
+        if (anime.getName() == null || anime.getName().trim().isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid Name");
         }
     }

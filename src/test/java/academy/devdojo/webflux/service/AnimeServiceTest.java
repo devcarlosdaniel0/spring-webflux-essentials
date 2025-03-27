@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+import java.util.List;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
 
@@ -63,6 +64,10 @@ class AnimeServiceTest {
         BDDMockito.when(animeRepository.save(AnimeCreator.animeToBeSaved()))
                 .thenReturn(Mono.just(anime));
 
+        BDDMockito.when(animeRepository
+                .saveAll(List.of(AnimeCreator.animeToBeSaved(), AnimeCreator.animeToBeSaved())))
+                .thenReturn(Flux.just(anime, anime));
+
         BDDMockito.when(animeRepository.delete(ArgumentMatchers.any(Anime.class)))
                 .thenReturn(Mono.empty());
 
@@ -109,6 +114,33 @@ class AnimeServiceTest {
                 .expectSubscription()
                 .expectNext(anime)
                 .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("saveAll creates a list of anime when successful")
+    void saveAll_CreatesListOfAnime_WhenSuccessful() {
+        Anime animeToBeSaved = AnimeCreator.animeToBeSaved();
+
+        StepVerifier.create(animeService.saveAll(List.of(animeToBeSaved, animeToBeSaved)))
+                .expectSubscription()
+                .expectNext(anime, anime)
+                .verifyComplete();
+    }
+
+    @Test
+    @DisplayName("saveAll returns Mono error when one of the objects in the list contains null or empty name")
+    void saveAll_ReturnsMonoError_WhenContainsNullOrEmptyName() {
+        Anime animeToBeSaved = AnimeCreator.animeToBeSaved();
+
+        BDDMockito.when(animeRepository
+                        .saveAll(ArgumentMatchers.anyIterable()))
+                        .thenReturn(Flux.just(anime, anime.withName(null)));
+
+        StepVerifier.create(animeService.saveAll(List.of(animeToBeSaved, animeToBeSaved.withName(" "))))
+                .expectSubscription()
+                .expectNext(anime)
+                .expectError(ResponseStatusException.class)
+                .verify();
     }
 
     @Test
