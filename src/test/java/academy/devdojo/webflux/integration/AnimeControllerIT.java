@@ -13,13 +13,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.reactive.function.BodyInserters;
 import reactor.blockhound.BlockHound;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
+import reactor.test.StepVerifier;
 
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
@@ -63,6 +66,9 @@ public class AnimeControllerIT {
                 .thenReturn(Flux.just(anime));
 
         BDDMockito.when(animeRepository.findById(ArgumentMatchers.anyInt()))
+                .thenReturn(Mono.just(anime));
+
+        BDDMockito.when(animeRepository.save(AnimeCreator.animeToBeSaved()))
                 .thenReturn(Mono.just(anime));
     }
 
@@ -116,4 +122,35 @@ public class AnimeControllerIT {
                 .jsonPath("$.developerMessage").isEqualTo("A ResponseStatusException Happened");
 
     }
+
+    @Test
+    @DisplayName("save creates an anime when successful")
+    void save_CreatesAnAnime_WhenSuccessful() {
+        Anime animeToBeSaved = AnimeCreator.animeToBeSaved();
+
+        webTestClient.post()
+                .uri("/animes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(animeToBeSaved))
+                .exchange()
+                .expectStatus().isCreated()
+                .expectBody(Anime.class)
+                .isEqualTo(anime);
+    }
+
+    @Test
+    @DisplayName("save returns Mono error when name is empty")
+    void save_ReturnsError_WhenNameIsEmpty() {
+        Anime animeToBeSaved = AnimeCreator.animeToBeSaved().withName(" ");
+
+        webTestClient.post()
+                .uri("/animes")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(BodyInserters.fromValue(animeToBeSaved))
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+                .jsonPath("$.status").isEqualTo(400);
+    }
+
 }
