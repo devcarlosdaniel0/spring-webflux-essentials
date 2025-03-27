@@ -10,7 +10,6 @@ import org.mockito.BDDMockito;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.server.ResponseStatusException;
 import reactor.blockhound.BlockHound;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
@@ -94,7 +93,7 @@ class AnimeControllerTest {
     void save_CreatesAnAnime_WhenSuccessful() {
         Anime animeToBeSaved = AnimeCreator.animeToBeSaved();
 
-        StepVerifier.create(animeController.create(animeToBeSaved))
+        StepVerifier.create(animeController.save(animeToBeSaved))
                 .expectSubscription()
                 .expectNext(anime)
                 .verifyComplete();
