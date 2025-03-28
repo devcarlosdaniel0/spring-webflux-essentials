@@ -134,11 +134,10 @@ class AnimeServiceTest {
 
         BDDMockito.when(animeRepository
                         .saveAll(ArgumentMatchers.anyIterable()))
-                        .thenReturn(Flux.just(anime, anime.withName(null)));
+                        .thenReturn(Flux.just(anime, anime.withName(" ")));
 
         StepVerifier.create(animeService.saveAll(List.of(animeToBeSaved, animeToBeSaved.withName(" "))))
                 .expectSubscription()
-                .expectNext(anime)
                 .expectError(ResponseStatusException.class)
                 .verify();
     }

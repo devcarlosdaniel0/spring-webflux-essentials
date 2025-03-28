@@ -48,8 +48,10 @@ public class AnimeService {
 
     @Transactional
     public Flux<Anime> saveAll(List<Anime> animes) {
-        return animeRepository.saveAll(animes)
-                .doOnNext(this::throwResponseStatusExceptionWhenEmptyName);
+        return Flux.fromIterable(animes)
+                .doOnNext(this::throwResponseStatusExceptionWhenEmptyName)
+                .collectList()
+                .flatMapMany(animeRepository::saveAll);
     }
 
     private void throwResponseStatusExceptionWhenEmptyName(Anime anime) {
